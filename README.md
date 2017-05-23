@@ -27,9 +27,9 @@ This script takes a vcf file (formatted from Freebayes), an info file that tells
 It bioinformatically switches n percent of reads to different samples of the same lane. Genotypes are recalled with the new read depths.
 
 ### Options:
---info=FILENAME; The name of your info file.
---max_sites=INTEGER; The number of sites to process before stopping.
---switch_rate=SCALAR; The minimum read depth to consider an unbalanced heterozygote (0 < N < 1).
+* info=FILENAME; The name of your info file.
+* max_sites=INTEGER; The number of sites to process before stopping.
+* switch_rate=SCALAR; The minimum read depth to consider an unbalanced heterozygote (0 < N < 1).
 ### Example:
 ```
 zcat example_data.vcf.gz | perl ./vcf2indexswitcher.pl --info example_infofile.txt --max_sites 10000 --switch_rate 0.01 > example_data.switched.vcf
@@ -44,9 +44,9 @@ This script takes a vcf file (formatted from Freebayes) and an info file that te
 It will only use di-allelic SNPs from the vcf file. It looks for unbalanced heterozygotes where one allele has one read and the other has multiple. By default genotypes need to have >=5 reads to be considered unbalanced.
 
 Options:
---info=FILENAME; The name of your info file.
---max_sites=INTEGER; The number of sites to process before stopping.
---min_dp=INTEGER; The minimum read depth to consider an unbalanced heterozygote.
+* info=FILENAME; The name of your info file.
+* max_sites=INTEGER; The number of sites to process before stopping.
+* min_dp=INTEGER; The minimum read depth to consider an unbalanced heterozygote.
 
 ```
 zcat example_data.vcf.gz | perl ./vcf2indexinvestigator.pl --info example_infofile.txt --max_sites 10000 --min_dp 10 > out.txt
@@ -67,8 +67,9 @@ Each site is represented by two rows, one testing within the lane and another te
 
 ***
 
-### plot_indexinvestigator.R
+## plot_indexinvestigator.R
 A simple R script is provided to plot the output of vcf2indexinvestigator.pl. It takes two arguments, the name of the output file vcf2indexinvestigator.pl produces and the name of your final resulting pdf.
+
 *NOTE*: This script requires the tidyverse package, so it will attempt to install it if it is not already installed. This may take a few minutes.
 
 ```
