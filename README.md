@@ -34,7 +34,7 @@ It bioinformatically switches n percent of reads to different samples of the sam
 * switch_rate=SCALAR; The minimum read depth to consider an unbalanced heterozygote (0 < N < 1).
 ### Example:
 ```
-zcat example_data.vcf.gz | perl ./vcf2indexswitcher.pl --info example_infofile.txt --max_sites 10000 --switch_rate 0.01 > example_data.switched.vcf
+zcat example_data.vcf.gz | perl ./vcf2indexswitcher.pl --info example_infofile.txt --max_sites 1000 --switch_rate 0.01 > example_data.switched.vcf
 ```
 ### Output:
 A vcf file fit for using on vcf2indexinvestigator.pl. Note: Much metadata has been stripped from this vcf file.
@@ -47,11 +47,11 @@ It will only use di-allelic SNPs from the vcf file. It looks for unbalanced hete
 
 Options:
 * info=FILENAME; The name of your info file.
-* max_sites=INTEGER; The number of sites to process before stopping.
+* max_sites=INTEGER; The number of sites to process before stopping. More is better, but around 500,000 you're maxing out.
 * min_dp=INTEGER; The minimum read depth to consider an unbalanced heterozygote.
 
 ```
-zcat example_data.vcf.gz | perl ./vcf2indexinvestigator.pl --info example_infofile.txt --max_sites 10000 --min_dp 10 > out.txt
+zcat example_data.vcf.gz | perl ./vcf2indexinvestigator.pl --info example_infofile.txt --max_sites 1000 --min_dp 10 > out.txt
 ```
 ### Output:
 A text file with nine columns and two rows per unbalanced heterozygote.
