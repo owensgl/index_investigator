@@ -1,6 +1,8 @@
 # Index_investigator
 
-Index switching is potentially a large problem in Illumina HiSeq data. These scripts are designed to test if index switching is occuring in your dataset. IMPORTANT POINT: This will give a false positive signal if genetic grouping corresponds to lane grouping. For example, if populations are intentionally sequenced together in the same lane. 
+Index switching is potentially a large problem in Illumina HiSeq data. These scripts are designed to test if index switching is occuring in your dataset. 
+#### IMPORTANT POINT: 
+This will give a false positive signal if genetic grouping corresponds to lane grouping. For example, if populations are intentionally sequenced together in the same lane. 
 
 ## Getting Started
 
