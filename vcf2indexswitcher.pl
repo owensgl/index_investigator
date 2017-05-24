@@ -26,7 +26,7 @@ open POP, $popinfo or die "Count not open info file\n";
 while(<POP>){
   chomp;
   if ($. == 1){next;}
-  my @a = split(/\t/,$_);
+  my @a = split(' ',$_);
   my $sample = $a[0];
   my $lane1 = $a[1];
   my $lane2 = $a[2];
@@ -55,6 +55,7 @@ while(<STDIN>){
     foreach my $i (9..$#fields){
       foreach my $j (9..$#fields){
 	if ($j ne $i){
+	  unless($lane{$sample{$i}}{1} and $lane{$sample{$j}}{1}){next;}
 	  if (($lane{$sample{$i}}{1} eq $lane{$sample{$j}}{1}) or
 	     ($lane{$sample{$i}}{1} eq $lane{$sample{$j}}{2}) or
 	     ($lane{$sample{$i}}{2} eq $lane{$sample{$j}}{2}) or
@@ -87,6 +88,16 @@ while(<STDIN>){
     my %moved_reads;
     my %removed_reads;
     my %genotype;
+    my $format = $fields[8];
+    my $format_type;
+    if ($format =~ m/^GT:DP:DPR:/){
+      $format_type = "fb";
+    }elsif ($format =~ m/^GT:AD:DP/){
+      $format_type = "gatk";
+    }else{
+      die "unrecognized vcf genotype format $format\n";
+    }
+
     foreach my $i (9..$#fields){
       if ($fields[$i] eq '.'){
 	$depth{$sample{$i}}{0} = 0;
@@ -97,9 +108,19 @@ while(<STDIN>){
         my $call = $info[0];
 	$genotype{$sample{$i}} = $call;
         my @bases = split(/\//,$call);
-        my $dp = $info[1];
-        my $ref_dp = $info[3];
-        my $alt_dp = $info[5];
+        my $dp;
+        my $ref_dp;
+        my $alt_dp;
+        if ($format_type eq "fb"){
+          $dp = $info[1];
+          $ref_dp = $info[3];
+          $alt_dp = $info[5];
+        }elsif ($format_type eq "gatk"){
+          $dp = $info[2];
+          my @tmp = split(/,/,$info[1]);
+          $ref_dp = $tmp[0];
+          $alt_dp = $tmp[1];
+        }
 	$depth{$sample{$i}}{0} = $ref_dp;
 	if ($ref_dp){
 	  foreach my $j (1..$ref_dp){

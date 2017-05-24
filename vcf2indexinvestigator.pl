@@ -34,11 +34,12 @@ my $min_unbalanced_dp = 1;
 my %lane;
 my %tech;
 my %reads;
-open POP, $popinfo or die "Can't open sample info file: $!";
+my %total_lanes;
+open POP, $popinfo or die "ERROR: Can't open sample info file: $!";
 while(<POP>){
   chomp;
   if ($. == 1){next;}
-  my @a = split(/\t/,$_);
+  my @a = split(' ',$_);
   my $sample = $a[0];
   my $lane1 = $a[1];
   my $lane2 = $a[2];
@@ -46,7 +47,12 @@ while(<POP>){
   $lane{$sample}{1} = $lane1;
   $lane{$sample}{2} = $lane2;
   $tech{$sample} = $tech;
+  $total_lanes{$lane1}++;
+  $total_lanes{$lane2}++;
 }
+
+my $n_of_lanes = scalar(keys %total_lanes);
+if ($n_of_lanes <= 1){die "ERROR: This program needs more than one lane of data to work\n";}
 close POP;
 my $counter;
 my %sample;
@@ -88,9 +94,20 @@ while(<STDIN>){
     my %het;
     my %lane_counter;
     my $total_count;
+    my $format = $fields[8];
+    my $format_type;
+    if ($format =~ m/^GT:DP:DPR:/){
+      $format_type = "fb";
+    }elsif ($format =~ m/^GT:AD:DP/){
+      $format_type = "gatk";
+    }else{
+      die "unrecognized vcf genotype format $format\n";
+    }
     #Look for samples with unbalanced alleles
     foreach my $i (9..$#fields){
-      unless($lane{$sample{$i}}{1}){next;}
+      unless($lane{$sample{$i}}{1}){
+	next;
+      }
       if ($fields[$i] ne '.'){
         my @info = split(/:/,$fields[$i]);
         my $call = $info[0];
@@ -113,9 +130,20 @@ while(<STDIN>){
 	if ($bases[0] ne $bases[1]){
 	  $het{$sample{$i}} = "T";
 	}
-        my $dp = $info[1];
-        my $ref_dp = $info[3];
-        my $alt_dp = $info[5];
+        my $dp;
+        my $ref_dp;
+        my $alt_dp;
+        if ($format_type eq "fb"){
+          $dp = $info[1];
+          $ref_dp = $info[3];
+          $alt_dp = $info[5];
+        }elsif ($format_type eq "gatk"){
+          $dp = $info[2];
+          my @tmp = split(/,/,$info[1]);
+	  $ref_dp = $tmp[0];
+	  $alt_dp = $tmp[1];
+        }
+	if ($dp eq "\."){$dp = 0;}
         if ($dp >= $min_dp){
           if ($ref_dp == $min_unbalanced_dp){
             push(@test_samples,$sample{$i});
