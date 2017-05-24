@@ -13,7 +13,7 @@ These instructions will get you a copy of the project up and running on your loc
 These scripts need no installation. Just download the perl scripts using git.
 
 ```
-git https://github.com/owensgl/index_investigator.git
+git clone https://github.com/owensgl/index_investigator.git
 ```
 
 ### Input files
@@ -34,7 +34,7 @@ It bioinformatically switches n percent of reads to different samples of the sam
 * switch_rate=SCALAR; The minimum read depth to consider an unbalanced heterozygote (0 < N < 1).
 ### Example:
 ```
-zcat example_data.vcf.gz | perl ./vcf2indexswitcher.pl --info example_infofile.txt --max_sites 1000 --switch_rate 0.01 > example_data.switched.vcf
+zcat < example_data.vcf.gz | perl ./vcf2indexswitcher.pl --info example_infofile.txt --max_sites 1000 --switch_rate 0.01 > example_data.switched.vcf
 ```
 ### Output:
 A vcf file fit for using on vcf2indexinvestigator.pl. Note: Much metadata has been stripped from this vcf file.
@@ -51,7 +51,7 @@ Options:
 * min_dp=INTEGER; The minimum read depth to consider an unbalanced heterozygote.
 
 ```
-zcat example_data.vcf.gz | perl ./vcf2indexinvestigator.pl --info example_infofile.txt --max_sites 1000 --min_dp 10 > out.txt
+zcat < example_data.vcf.gz | perl ./vcf2indexinvestigator.pl --info example_infofile.txt --max_sites 1000 --min_dp 10 > out.txt
 ```
 ### Output:
 A text file with nine columns and two rows per unbalanced heterozygote.
@@ -88,5 +88,8 @@ Rscript plot_indexinvestigator.R out.txt out.pdf
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+
 
