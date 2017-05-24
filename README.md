@@ -1,6 +1,5 @@
 
 # Index_investigator
-*** 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Index switching is potentially a large problem in Illumina HiSeq data. These scripts are designed to test if index switching is occuring in your dataset. 
