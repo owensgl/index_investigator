@@ -6,9 +6,6 @@ Index switching is potentially a large problem in Illumina HiSeq data. These scr
 #### IMPORTANT POINT: 
 This will give a false positive signal if genetic grouping corresponds to lane grouping. For example, if populations are intentionally sequenced together in the same lane. Additionally, this requires samples sequenced on multiple different lanes since it relies on greater similarity for samples sequenced on the same lane, versus other lanes. 
 
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
 ### Installing
 
