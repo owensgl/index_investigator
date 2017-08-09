@@ -21,22 +21,22 @@ git clone https://github.com/owensgl/index_investigator.git
 ### Input files
 
 Both scripts require two input files:
-1. A vcf file containing SNPs. This script was written based on vcfs from freebayes v1.1.0 and may not correctly parse files from other programs.
+1. A vcf file containing SNPs. This script was written based on vcfs from freebayes v1.1.0 and GATK v3.7 and may not correctly parse files from other programs.
 2. An tab separated info file containing 4 columns: Samplename, Lane, Machine. If a sample is sequenced on multiple lanes, give it multiple rows, each with a different lane identifier. The script expects that each sample is sequenced on a single technology, and will only use the last technology identifier for a given sample.
 
-NOTE: Example data is a subset of data used in Owens et al., 2017.
+*NOTE:* Example data is a subset of data used in Owens et al., 2017.
 
 ***
 
 ## vcf2indexswitcher.pl
-This script takes a vcf file (formatted from Freebayes), an info file that tells it what technology (i.e. sequencing machine) and lane each sample was sequenced on, and a decimal fraction of reads to switch (i.e. 0.05 for 5%) 
+This script takes a vcf file, an info file that tells it what technology (i.e. sequencing machine) and lane each sample was sequenced on, and a decimal fraction of reads to switch (i.e. 0.05 for 5%) 
 It bioinformatically switches n percent of reads to different samples of the same lane. Genotypes are recalled with the new read depths.
 
 ### Options:
 * info=FILENAME; The name of your info file.
 * max_sites=INTEGER (500000); The number of sites to process before stopping.
 * switch_rate=SCALAR (0.1); The minimum read depth to consider an unbalanced heterozygote (0 < N < 1). 
-* min_balance=SCALAR (0); The minimum allele balance to call a heterozygote. 0 means a heterozygote will be called whenever there are reads for both alleles, regardless of balance. 
+* min_balance=SCALAR (0); The minimum allele balance to call a heterozygote. 0 means a heterozygote will be called whenever there are reads for both alleles, regardless of balance. 0.5 means that each allele must have equal numbers of reads.
 ### Example:
 ```
 zcat < example_data.vcf.gz | perl ./vcf2indexswitcher_v1.1.pl --info example_infofile.txt --max_sites 1000 --switch_rate 0.01 > example_data.switched.vcf
@@ -47,7 +47,7 @@ A vcf file fit for using on vcf2indexinvestigator_v1.1.pl. Note: Much metadata h
 ***
 
 ## vcf2indexinvestigator.pl
-This script takes a vcf file (formatted from Freebayes) and an info file that tells it what technology (i.e. sequencing machine) and lane each sample was sequenced on. 
+This script takes a vcf file and an info file that tells it what technology (i.e. sequencing machine) and lane each sample was sequenced on. 
 It will only use di-allelic SNPs from the vcf file. It looks for unbalanced heterozygotes where one allele has one read and the other has multiple. By default genotypes need to have >=5 reads to be considered unbalanced.
 
 Options:
