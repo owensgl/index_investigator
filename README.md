@@ -22,7 +22,7 @@ git clone https://github.com/owensgl/index_investigator.git
 
 Both scripts require two input files:
 1. A vcf file containing SNPs. This script was written based on vcfs from freebayes v1.1.0 and GATK v3.7 and may not correctly parse files from other programs.
-2. An tab separated info file containing 4 columns: Samplename, Lane, Machine. If a sample is sequenced on multiple lanes, give it multiple rows, each with a different lane identifier. The script expects that each sample is sequenced on a single technology, and will only use the last technology identifier for a given sample.
+2. An tab separated info file containing 3 columns: Samplename, Lane, Machine. If a sample is sequenced on multiple lanes, give it multiple rows, each with a different lane identifier. The script expects that each sample is sequenced on a single technology, and will only use the last technology identifier for a given sample.
 
 *NOTE:* Example data is a subset of data used in Owens et al., 2017.
 
