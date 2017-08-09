@@ -83,6 +83,14 @@ Rscript plot_indexinvestigator.R out.txt out.pdf
 
 
 ***
+## Versions
+
+Version 1.1 - 2017/08/09:
+* Added support for 100 lanes per sample. This uses a modified info file with one row per lane per sample. Output file is slightly changed to accommodate an arbitrary number of lanes.
+* Added support for allelic balance requirement for heterozygote calling during simulations.
+
+
+***
 
 ## Authors
 
