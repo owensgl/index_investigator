@@ -22,7 +22,7 @@ git clone https://github.com/owensgl/index_investigator.git
 
 Both scripts require two input files:
 1. A vcf file containing SNPs. This script was written based on vcfs from freebayes v1.1.0 and may not correctly parse files from other programs.
-2. An tab separated info file containing 4 columns: Samplename, Lane1, Lane2, Machine. There are two lanes in case a single sample was sequenced on multiple lanes. If it was only sequenced on one lane, please repeat the same identifier in both columns.
+2. An tab separated info file containing 4 columns: Samplename, Lane, Machine. If a sample is sequenced on multiple lanes, give it multiple rows, each with a different lane identifier. The script expects that each sample is sequenced on a single technology, and will only use the last technology identifier for a given sample. 
 NOTE: The 'example_data.vcf' and 'example_infofile.txt' were used in Owens et al., 2017.
 
 ***
@@ -33,8 +33,9 @@ It bioinformatically switches n percent of reads to different samples of the sam
 
 ### Options:
 * info=FILENAME; The name of your info file.
-* max_sites=INTEGER; The number of sites to process before stopping.
-* switch_rate=SCALAR; The minimum read depth to consider an unbalanced heterozygote (0 < N < 1).
+* max_sites=INTEGER (500000); The number of sites to process before stopping.
+* switch_rate=SCALAR (0.1); The minimum read depth to consider an unbalanced heterozygote (0 < N < 1). 
+* min_balance=SCALAR (0); The minimum allele balance to call a heterozygote. 0 means a heterozygote will be called whenever there are reads for both alleles, regardless of balance. 
 ### Example:
 ```
 zcat < example_data.vcf.gz | perl ./vcf2indexswitcher.pl --info example_infofile.txt --max_sites 1000 --switch_rate 0.01 > example_data.switched.vcf
@@ -50,8 +51,8 @@ It will only use di-allelic SNPs from the vcf file. It looks for unbalanced hete
 
 Options:
 * info=FILENAME; The name of your info file.
-* max_sites=INTEGER; The number of sites to process before stopping. More is better, but around 500,000 you're maxing out.
-* min_dp=INTEGER; The minimum read depth to consider an unbalanced heterozygote.
+* max_sites=INTEGER (500000); The number of sites to process before stopping. More is better, but around 500,000 you're maxing out.
+* min_dp=INTEGER (5); The minimum read depth to consider an unbalanced heterozygote.
 
 ```
 zcat < example_data.vcf.gz | perl ./vcf2indexinvestigator.pl --info example_infofile.txt --max_sites 1000 --min_dp 10 > out.txt
@@ -61,12 +62,11 @@ A text file with nine columns and two rows per unbalanced heterozygote.
 1. site: The position in the genome.
 2. sample: The sample with the unbalanced heterozygote.
 3. technology: The machine used to sequenced the sample.
-4. lane1: The lane used to sequence the sample.
-5. lane2: The other lane used to sequence the sample.
-6. depth: The read depth of the unbalanced heterozygote.
-7. percent: The predicted percent of allele sharing within the lane (p_hat).
-8. type: Whether it's testing samples within the lane or control samples outside the lane.
-9. value: Whether there is allele sharing (1) or not (0).
+4. lanes: The lanes used to sequence the sample, separated by ";".
+5. depth: The read depth of the unbalanced heterozygote.
+6. percent: The predicted percent of allele sharing within the lane (p_hat).
+7. type: Whether it's testing samples within the lane or control samples outside the lane.
+8. value: Whether there is allele sharing (1) or not (0).
 
 Each site is represented by two rows, one testing within the lane and another testing a control set of samples outside the lane.
 
