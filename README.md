@@ -38,10 +38,10 @@ It bioinformatically switches n percent of reads to different samples of the sam
 * min_balance=SCALAR (0); The minimum allele balance to call a heterozygote. 0 means a heterozygote will be called whenever there are reads for both alleles, regardless of balance. 
 ### Example:
 ```
-zcat < example_data.vcf.gz | perl ./vcf2indexswitcher.pl --info example_infofile.txt --max_sites 1000 --switch_rate 0.01 > example_data.switched.vcf
+zcat < example_data.vcf.gz | perl ./vcf2indexswitcher_v1.1.pl --info example_infofile.txt --max_sites 1000 --switch_rate 0.01 > example_data.switched.vcf
 ```
 ### Output:
-A vcf file fit for using on vcf2indexinvestigator.pl. Note: Much metadata has been stripped from this vcf file.
+A vcf file fit for using on vcf2indexinvestigator_v1.1.pl. Note: Much metadata has been stripped from this vcf file.
 
 ***
 
@@ -55,7 +55,7 @@ Options:
 * min_dp=INTEGER (5); The minimum read depth to consider an unbalanced heterozygote.
 
 ```
-zcat < example_data.vcf.gz | perl ./vcf2indexinvestigator.pl --info example_infofile.txt --max_sites 1000 --min_dp 10 > out.txt
+zcat < example_data.vcf.gz | perl ./vcf2indexinvestigator_v1.1.pl --info example_infofile.txt --max_sites 1000 --min_dp 10 > out.txt
 ```
 ### Output:
 A text file with nine columns and two rows per unbalanced heterozygote.
