@@ -36,19 +36,24 @@ my %tech;
 my %reads;
 my %total_lanes;
 open POP, $popinfo or die "ERROR: Can't open sample info file: $!";
+my %lanes_per_sample;
 while(<POP>){
   chomp;
   if ($. == 1){next;}
   my @a = split(' ',$_);
   my $sample = $a[0];
-  my $lane1 = $a[1];
-  my $lane2 = $a[2];
-  my $tech = $a[3];
-  $lane{$sample}{1} = $lane1;
-  $lane{$sample}{2} = $lane2;
+  my $lane = $a[1];
+  my $tech = $a[2];
+  foreach my $i (1..100){
+    unless($lane{$sample}{$i}){
+      $lane{$sample}{$i} = $lane;
+      goto MOVEON;
+    }
+  }
+  MOVEON:
   $tech{$sample} = $tech;
-  $total_lanes{$lane1}++;
-  $total_lanes{$lane2}++;
+  $total_lanes{$lane}++;
+  $lanes_per_sample{$sample}++;
 }
 
 my $n_of_lanes = scalar(keys %total_lanes);
@@ -57,7 +62,7 @@ close POP;
 my $counter;
 my %sample;
 
-print "site\tsample\ttechnology\tlane1\tlane2\tdepth\tpercent\ttype\tvalue";
+print "site\tsample\ttechnology\tlanes\tdepth\tpercent\ttype\tvalue";
 while(<STDIN>){
   my $line = "$_";
   chomp $line;
@@ -92,7 +97,6 @@ while(<STDIN>){
     my %test_depth;
     my %counts_in_sample;
     my %het;
-    my %lane_counter;
     my $total_count;
     my $format = $fields[8];
     my $format_type;
@@ -112,13 +116,9 @@ while(<STDIN>){
         my @info = split(/:/,$fields[$i]);
         my $call = $info[0];
         my @bases = split(/\//,$call);
-        $lane_alleles{$lane{$sample{$i}}{1}}{$bases[0]}++;
-        $lane_alleles{$lane{$sample{$i}}{1}}{$bases[1]}++;
-	$lane_counter{$lane{$sample{$i}}}{1}++;
-	$lane_counter{$lane{$sample{$i}}}{2}++;
-        if ($lane{$sample{$i}}{1} ne $lane{$sample{$i}}{2}){
-          $lane_alleles{$lane{$sample{$i}}{2}}{$bases[0]}++;
-          $lane_alleles{$lane{$sample{$i}}{2}}{$bases[1]}++;
+	foreach my $j (1..$lanes_per_sample{$sample{$i}}){
+          $lane_alleles{$lane{$sample{$i}}{$j}}{$bases[0]}++;
+          $lane_alleles{$lane{$sample{$i}}{$j}}{$bases[1]}++;
         }
         $sample_alleles{$sample{$i}}{1} = $bases[0];
         $sample_alleles{$sample{$i}}{2} = $bases[1];
@@ -159,17 +159,21 @@ while(<STDIN>){
     }
       unless (@test_samples){next;}
       foreach my $test_sample (@test_samples){
-        my $testlane1 = $lane{$test_sample}{1};
-	my $testlane2 = $lane{$test_sample}{2};
+        my %testlanes;
+	foreach my $j (1..$lanes_per_sample{$test_sample}){
+          $testlanes{$lane{$test_sample}{$j}}++;
+        }
 	my $n;
 	foreach my $i (9..$#fields){ #Count each sample in the lane that has data to make it equal $n
+          unless ($lane{$sample{$i}}{1}){next;}
 	  if ($test_sample eq $sample{$i}){next;}
-	  if (($lane{$sample{$i}}{1} eq $testlane1) or
-	    ($lane{$sample{$i}}{1} eq $testlane2) or
-	    ($lane{$sample{$i}}{2} eq $testlane1) or
-	    ($lane{$sample{$i}}{2} eq $testlane2)){
-	    $n++;
+          foreach my $k (1..$lanes_per_sample{$sample{$i}}){
+            if ($testlanes{$lane{$sample{$i}}{$k}}){
+	      $n++;
+	      goto NEXTSAMPLE;
+            }
 	  }
+          NEXTSAMPLE:
 	}
 #print STDERR "$chr.$pos\t$test_sample\t$n\n";
         my $picked_samples = 0;
@@ -178,18 +182,26 @@ while(<STDIN>){
 	my @range = (9..$#fields);
 	fisher_yates_shuffle(\@range);	
         foreach my $rand (@range){
+          my $matched;
           if ($sample{$rand} eq $test_sample){next;}
 	  unless($lane{$sample{$rand}}{1}){next;}
           unless(defined $sample_alleles{$sample{$rand}}{1}){next;}
           #If correct technology and lane
           if ($tech{$sample{$rand}} eq $tech{$test_sample}){
-            if (($lane{$sample{$rand}}{1} ne $lane{$test_sample}{1}) and ($lane{$sample{$rand}}{1} ne $lane{$test_sample}{2}) and ($lane{$sample{$rand}}{2} ne $lane{$test_sample}{2})){
-              $control_alleles{$sample_alleles{$sample{$rand}}{1}}++;
-              $control_alleles{$sample_alleles{$sample{$rand}}{2}}++;
-              $picked_samples++;
+            foreach my $k (1..$lanes_per_sample{$sample{$rand}}){
+              foreach my $j (1..$lanes_per_sample{$test_sample}){
+                if ($lane{$test_sample}{$j} eq $lane{$sample{$rand}}{$k}){
+                  $matched++;
+                }
+              }
+            }
+          }
+          unless ($matched){
+            $picked_samples++;
+            $control_alleles{$sample_alleles{$sample{$rand}}{1}}++;
+            $control_alleles{$sample_alleles{$sample{$rand}}{2}}++;
 #print STDERR "picked random sample $rand, which is $picked_samples\n";
 #print STDERR "This sample had $sample_alleles{$sample{$rand}}{1} and $sample_alleles{$sample{$rand}}{2}\n";
-            }
           }
 	  if ($picked_samples >= $n){
 	    goto TESTSAMPLE;
@@ -199,16 +211,17 @@ while(<STDIN>){
 	if ($picked_samples ne $n){next;}
         #check if unbalanced allele is in the lane
         my $lane_present = "0";
-	my $lane1_tmp = $lane_alleles{$lane{$test_sample}{1}}{$rare_allele{$test_sample}};
-	my $lane2_tmp = $lane_alleles{$lane{$test_sample}{2}}{$rare_allele{$test_sample}};
-	if ($counts_in_sample{$test_sample}{$rare_allele{$test_sample}}){
-	  $lane1_tmp-=$counts_in_sample{$test_sample}{$rare_allele{$test_sample}};
-	  $lane2_tmp-=$counts_in_sample{$test_sample}{$rare_allele{$test_sample}};
-	}
-
-        if (($lane1_tmp) or ($lane2_tmp)){
-          $lane_present = "1";
+        my %lane_tmp;
+        foreach my $j (1..$lanes_per_sample{$test_sample}){
+          $lane_tmp{$j} = $lane_alleles{$lane{$test_sample}{$j}}{$rare_allele{$test_sample}};
+          if ($counts_in_sample{$test_sample}{$rare_allele{$test_sample}}){
+            $lane_tmp{$j}-=$counts_in_sample{$test_sample}{$rare_allele{$test_sample}};
+          }
+          if ($lane_tmp{$j}){
+            $lane_present = "1";
+          }
         }
+
         #check if unbalanced allele is in the random non-lane samples
         my $control_present = "0";
         if ($control_alleles{$rare_allele{$test_sample}}){
@@ -234,8 +247,14 @@ while(<STDIN>){
 #print STDERR "$chance\t$n\t$lane{$test_sample}{1}\n";
 	if ($chance > .95){next};
 #print STDERR "percent = $percent_unbalanced, n = $n, chance = $chance\n";
-        print "\n$chr.$pos\t$test_sample\t$tech{$test_sample}\t$lane{$test_sample}{1}\t$lane{$test_sample}{2}\t$test_depth{$test_sample}\t$chance\twithin_lane\t$lane_present";
-        print "\n$chr.$pos\t$test_sample\t$tech{$test_sample}\t$lane{$test_sample}{1}\t$lane{$test_sample}{2}\t$test_depth{$test_sample}\t$chance\tcontrol\t$control_present";
+        my $all_lanes = $lane{$test_sample}{1};
+        if ($lane{$test_sample}{2}){
+          foreach my $j (2..$lanes_per_sample{$test_sample}){
+            $all_lanes .= ";$lane{$test_sample}{$j}";
+          }
+        }
+        print "\n$chr.$pos\t$test_sample\t$tech{$test_sample}\t$all_lanes\t$test_depth{$test_sample}\t$chance\twithin_lane\t$lane_present";
+        print "\n$chr.$pos\t$test_sample\t$tech{$test_sample}\t$all_lanes\t$test_depth{$test_sample}\t$chance\tcontrol\t$control_present";
       }
     }
 }

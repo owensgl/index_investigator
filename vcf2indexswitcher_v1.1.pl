@@ -6,34 +6,43 @@ use Getopt::Long;
 my $popinfo = "NOTSPECIFIED";
 my $max_sites = 500000;
 my $switch_rate = 0.1;
-
+my $min_balance = 0;
 GetOptions (
         "info=s" => \$popinfo,
         "max_sites=i"   => \$max_sites,
-        "switch_rate=s"  => \$switch_rate
+        "switch_rate=s"  => \$switch_rate,
+        "min_balance=s" => \$min_balance
                 );
 
 if ($switch_rate > 1){die "Switch rate is above 1, which means above 100%"};
+if ($min_balance > 0.5){
+  $min_balance = 0.5;
+}
 print STDERR "Using info file $popinfo\n";
 print STDERR "Calculating for $max_sites sites\n";
 print STDERR "Switching $switch_rate of reads within a lane\n";
 
-
 my %lane;
 my %tech;
 my %reads;
+my %lanes_per_sample;
 open POP, $popinfo or die "Count not open info file\n";
 while(<POP>){
   chomp;
   if ($. == 1){next;}
   my @a = split(' ',$_);
   my $sample = $a[0];
-  my $lane1 = $a[1];
-  my $lane2 = $a[2];
-  my $tech = $a[3];
-  $lane{$sample}{1} = $lane1;
-  $lane{$sample}{2} = $lane2;
+  my $lane = $a[1];
+  my $tech = $a[2];
+  foreach my $i (1..100){
+    unless($lane{$sample}{$i}){
+      $lane{$sample}{$i} = $lane;
+      goto MOVEON;
+    }
+  }
+  MOVEON:
   $tech{$sample} = $tech;
+  $lanes_per_sample{$sample}++;
 }
 close POP;
 my $counter;
@@ -56,11 +65,12 @@ while(<STDIN>){
       foreach my $j (9..$#fields){
 	if ($j ne $i){
 	  unless($lane{$sample{$i}}{1} and $lane{$sample{$j}}{1}){next;}
-	  if (($lane{$sample{$i}}{1} eq $lane{$sample{$j}}{1}) or
-	     ($lane{$sample{$i}}{1} eq $lane{$sample{$j}}{2}) or
-	     ($lane{$sample{$i}}{2} eq $lane{$sample{$j}}{2}) or
-	     ($lane{$sample{$i}}{2} eq $lane{$sample{$j}}{1})){
+          foreach my $k (1..$lanes_per_sample{$sample{$i}}){
+            foreach my $l (1..$lanes_per_sample{$sample{$j}}){
+              if ($lane{$sample{$i}}{$k} eq $lane{$sample{$j}}{$l}){
 	       $withinlane{$sample{$i}}{$sample{$j}}++;
+              }
+            }
 	  }
 	}
       }
@@ -169,7 +179,26 @@ while(<STDIN>){
       }elsif(($ref_dp > 0) and ($alt_dp == 0)){
 	print "\t0/0:$total_dp:X:$ref_dp:X:$alt_dp";
       }elsif(($ref_dp > 0) and ($alt_dp > 0)){
-	print "\t0/1:$total_dp:X:$ref_dp:X:$alt_dp";
+        if ($min_balance){
+          my $major_depth = $alt_dp;
+          my $minor_depth = $ref_dp; 
+          if ($ref_dp > $alt_dp){
+            $major_depth = $ref_dp;
+            $minor_depth = $alt_dp;
+          }
+          my $balance = $minor_depth / ($major_depth + $minor_depth);
+          if ($balance > $min_balance){
+            print "\t0/1:$total_dp:X:$ref_dp:X:$alt_dp";
+          }else{
+             if ($ref_dp > $alt_dp){
+               print "\t0/0:$total_dp:X:$ref_dp:X:$alt_dp";
+             }else{
+               print "\t1/1:$total_dp:X:$ref_dp:X:$alt_dp";
+             }
+          }
+        }else{
+	  print "\t0/1:$total_dp:X:$ref_dp:X:$alt_dp";
+        }
       }elsif(($ref_dp == 0) and ($alt_dp > 0)){
 	print "\t1/1:$total_dp:X:$ref_dp:X:$alt_dp";
       }else{
